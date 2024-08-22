@@ -11,10 +11,14 @@ const inputElevation = document.querySelector('.form__input--elevation');
 class Workout {
   date = new Date();
   id = (Date.now() + '').slice(-10);
+  clicks = 0;
   constructor(coords, distance, duration) {
     this.coords = coords;
     this.distance = distance; // km
     this.duration = duration; // min
+  }
+  click() {
+    this.clicks++;
   }
   _setDescription() {
     // prettier-ignore
@@ -68,12 +72,14 @@ const resetInputs = () => {
 // App Arch
 class App {
   #map;
+  #zoomLevel = 13;
   #mapEvent;
   #workouts = [];
   constructor() {
     this._getPosition();
     form.addEventListener('submit', this._newWorkout.bind(this));
     inputType.addEventListener('change', this._toggleElevField);
+    containerWorkouts.addEventListener('click', this._moveToPopup.bind(this));
   }
   _getPosition() {
     if (navigator.geolocation) {
@@ -86,7 +92,7 @@ class App {
     const { latitude } = position.coords;
     const { longitude } = position.coords;
     const coords = [latitude, longitude];
-    this.#map = L.map('map').setView(coords, 13);
+    this.#map = L.map('map').setView(coords, this.#zoomLevel);
 
     L.tileLayer('https://tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
       attribution:
@@ -221,6 +227,21 @@ class App {
         `${workout.type === 'running' ? '🏃‍♂️' : '🚴‍♀️'} ${workout.description}`
       )
       .openPopup();
+  }
+  _moveToPopup(e) {
+    const workoutEl = e.target.closest('.workout');
+    if (!workoutEl) return;
+    const workout = this.#workouts.find(
+      workout => workout.id === workoutEl.dataset.id
+    );
+    this.#map.setView(workout.coords, this.#zoomLevel, {
+      animate: true,
+      pan: {
+        duration: 1,
+      },
+    });
+    // using API
+    workout.click();
   }
 }
 
