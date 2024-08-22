@@ -80,6 +80,7 @@ class App {
     form.addEventListener('submit', this._newWorkout.bind(this));
     inputType.addEventListener('change', this._toggleElevField);
     containerWorkouts.addEventListener('click', this._moveToPopup.bind(this));
+    this._getWorkouts();
   }
   _getPosition() {
     if (navigator.geolocation) {
@@ -100,6 +101,9 @@ class App {
     }).addTo(this.#map);
 
     this.#map.on('click', this._showForm.bind(this));
+    this.#workouts.forEach(workout => {
+      this._renderWorkoutMarker(workout);
+    });
   }
   _showForm(e) {
     this.#mapEvent = e;
@@ -134,7 +138,6 @@ class App {
         return alert('Inputs must be numbers and positive');
       }
       workout = new Running(coordsMarker, distance, duration, cadence);
-      this.#workouts.push(workout);
     }
     //if cycling then cycling
     if (type === 'cycling') {
@@ -157,6 +160,8 @@ class App {
     this._renderWorkout(workout);
     // reset form and hide it
     this._hideForm();
+    // Set Local Storage to all workouts
+    this._saveWorkouts();
   }
   _hideForm() {
     resetInputs();
@@ -241,7 +246,22 @@ class App {
       },
     });
     // using API
-    workout.click();
+    // workout.click();
+  }
+  _saveWorkouts() {
+    localStorage.setItem('workouts', JSON.stringify(this.#workouts));
+  }
+  _getWorkouts() {
+    const data = JSON.parse(localStorage.getItem('workouts'));
+    if (!data) return;
+    this.#workouts = data;
+    this.#workouts.forEach(workout => {
+      this._renderWorkout(workout);
+    });
+  }
+  reset() {
+    localStorage.removeItem('workouts');
+    location.reload();
   }
 }
 
